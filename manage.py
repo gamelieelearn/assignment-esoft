@@ -1,3 +1,4 @@
+# pragma: no cover
 import fire
 
 from src.cli import inference_app  # noqa: F401
