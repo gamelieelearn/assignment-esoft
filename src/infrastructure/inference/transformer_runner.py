@@ -1,3 +1,4 @@
+import io
 import os
 
 import requests
@@ -5,28 +6,28 @@ import torch
 from PIL import Image
 from transformers import AutoModelForImageClassification, AutoProcessor
 
-from src.domain.ports import ModelRunner
 
-
-class SimpleTransformerRunner(ModelRunner):
+class SimpleTransformerRunner:
     """Run model from huggingface"""
 
     def __init__(self, model_name: str):
         self.processor = AutoProcessor.from_pretrained(model_name)
         self.model = AutoModelForImageClassification.from_pretrained(model_name)
 
-    def predict(self, input_data):
-        image_path = input_data
-        image = Image.open(image_path).convert('RGB')
-        inputs = self.processor(images=image, return_tensors='pt')
+    def predict(self, batch: list[bytes]) -> list[str]:
+        """
+        input_data: list of image bytes
+        Returns: list of predicted labels
+        """
+        images = [Image.open(io.BytesIO(img_bytes)).convert('RGB') for img_bytes in batch]
+        inputs = self.processor(images=images, return_tensors='pt')
         with torch.no_grad():
             outputs = self.model(**inputs)
             logits = outputs.logits
-            print(f'{logits=}')
-            predicted_class_idx = logits.argmax(-1).item()
-            label = self.model.config.id2label[predicted_class_idx]
-            print(f'Predicted class: {label}')
-            return label
+            predicted_class_idxs = logits.argmax(-1).tolist()
+            labels = [self.model.config.id2label[idx] for idx in predicted_class_idxs]
+            print(f'Predicted classes: {labels}')
+            return labels
 
 
 if __name__ == '__main__':
@@ -43,5 +44,8 @@ if __name__ == '__main__':
         model_name='akahana/vit-base-cats-vs-dogs',
     )
 
-    result = simple_transformer_runner.predict(image_path)
+    # Example usage for batch
+    with open(image_path, 'rb') as f:
+        img_bytes = f.read()
+    result = simple_transformer_runner.predict([img_bytes, img_bytes])
     print(f'Result: {result}')
