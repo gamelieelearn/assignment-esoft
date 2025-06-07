@@ -30,7 +30,7 @@ class SimpleTransformerRunner(TorchRunner):
 
 
 if __name__ == '__main__':
-    image_path = 'example_image.jpg'
+    image_path = 'test/artifacts/example_image.jpg'
 
     if not os.path.exists(image_path):
         url = 'https://images.pexels.com/photos/45201/kitty-cat-kitten-pet-45201.jpeg'

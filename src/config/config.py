@@ -6,7 +6,7 @@ class MySettings(Dynaconf):
     aws_secret_access_key: str
     aws_default_region: str
     sqs_queue_url: str
-    abc: str
+    bucket_name: str
 
 
 settings = MySettings(

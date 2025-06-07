@@ -1,3 +1,4 @@
 [development]
 AWS_DEFAULT_REGION = "ap-southeast-2"
 SQS_QUEUE_URL = "https://sqs.ap-southeast-2.amazonaws.com/549182891887/AssignmentEsoft"
+BUCKET_NAME = 'assignment-esoft'
