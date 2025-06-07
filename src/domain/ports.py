@@ -1,12 +1,14 @@
-from abc import ABC, abstractmethod
-from typing import Any, List, Protocol
+from typing import Any, Protocol
 
 
-class MessageBus(ABC):
-    @abstractmethod
-    def receive(self, max_messages: int = 1) -> List[Any]: ...
-    @abstractmethod
-    def send(self, messages: List[Any]) -> None: ...
+class MessageBus(Protocol):
+    def receive(self, max_messages: int = 1) -> list[Any]: ...
+    def send(self, message: Any) -> None: ...
+
+
+class S3Compatible(Protocol):
+    def store(self, key: str, data: Any, bucket: str) -> None: ...
+    def retrieve(self, key: str, bucket: str) -> Any: ...
 
 
 class ModelRunner(Protocol):

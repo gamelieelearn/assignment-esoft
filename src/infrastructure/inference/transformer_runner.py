@@ -5,17 +5,17 @@ import torch
 from PIL import Image
 from transformers import AutoModelForImageClassification, AutoProcessor
 
-from src.infrastructure.inference.torch_runner import TorchRunner
+from src.domain.ports import ModelRunner
 
 
-class SimpleTransformerRunner(TorchRunner):
+class SimpleTransformerRunner(ModelRunner):
     """Run model from huggingface"""
 
-    def __init__(self, model, model_name: str):
+    def __init__(self, model_name: str):
         self.processor = AutoProcessor.from_pretrained(model_name)
         self.model = AutoModelForImageClassification.from_pretrained(model_name)
 
-    def run(self, input_data):
+    def predict(self, input_data):
         image_path = input_data
         image = Image.open(image_path).convert('RGB')
         inputs = self.processor(images=image, return_tensors='pt')
@@ -40,9 +40,8 @@ if __name__ == '__main__':
         print(f'Downloaded example image to {image_path}')
 
     simple_transformer_runner = SimpleTransformerRunner(
-        model=None,
         model_name='akahana/vit-base-cats-vs-dogs',
     )
 
-    result = simple_transformer_runner.run(image_path)
+    result = simple_transformer_runner.predict(image_path)
     print(f'Result: {result}')

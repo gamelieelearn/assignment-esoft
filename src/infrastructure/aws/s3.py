@@ -1,3 +1,5 @@
+from typing import Any
+
 import boto3
 from botocore.exceptions import NoCredentialsError
 
@@ -16,23 +18,21 @@ class StorageS3:
             region_name=aws_default_region,
         )
 
-    def upload_image_to_s3(self, image_path, bucket, key):
+    def store(self, key: str, data: Any, bucket: str) -> None:
         try:
-            self.client.upload_file(image_path, bucket, key)
+            self.client.put_object(Bucket=bucket, Key=key, Body=data)
             print(f'Upload successful! Bucket: {bucket}, Key: {key}')
-            return bucket, key
-        except FileNotFoundError:
-            print('The file was not found.')
         except NoCredentialsError:
             print('Credentials not available.')
+        except Exception as e:
+            print(f'Upload failed: {e}')
 
-    def download_image_from_s3(self, bucket, key, download_path):
+    def retrieve(self, key: str, bucket: str) -> Any:
         try:
-            self.client.download_file(bucket, key, download_path)
-            print(f'Download successful! Bucket: {bucket}, Key: {key}, Saved to: {download_path}')
-            return download_path
-        except FileNotFoundError:
-            print('The download path was not found.')
+            response = self.client.get_object(Bucket=bucket, Key=key)
+            data = response['Body'].read()
+            print(f'Download successful! Bucket: {bucket}, Key: {key}')
+            return data
         except NoCredentialsError:
             print('Credentials not available.')
         except Exception as e:
@@ -56,11 +56,18 @@ if __name__ == '__main__':
         print(f'Downloaded example image to {image_path}')
     s3_key = 'tmpbl_6dq9u.jpg'
 
-    sqs_queue = StorageS3(
+    s3_client = StorageS3(
         settings.aws_access_key_id,
         settings.aws_secret_access_key,
         settings.aws_default_region,
     )
-    sqs_queue.upload_image_to_s3(image_path, settings.bucket_name, s3_key)
+
+    with open(image_path, 'rb') as f:
+        img_bytes = f.read()
+    s3_client.store(s3_key, img_bytes, settings.bucket_name)
+    downloaded_bytes = s3_client.retrieve(s3_key, settings.bucket_name)
     download_path = '/tmp/downloaded_example_image.jpg'
-    sqs_queue.download_image_from_s3(settings.bucket_name, s3_key, download_path)
+    if downloaded_bytes:
+        with open(download_path, 'wb') as f:
+            f.write(downloaded_bytes)
+        print(f'Saved downloaded image to {download_path}')

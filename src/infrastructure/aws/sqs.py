@@ -1,15 +1,10 @@
 import json
 import os
-from abc import ABC
 
 import boto3
 
 
-class MessageQueue(ABC):
-    pass
-
-
-class SQSQueue(MessageQueue):
+class SQSMessageBus:
     def __init__(
         self,
         queue_url: str,
@@ -25,7 +20,7 @@ class SQSQueue(MessageQueue):
             region_name=aws_default_region,
         )
 
-    def send_message(self, message):
+    def send(self, message):
         """message should be json serializable"""
 
         try:
@@ -36,15 +31,15 @@ class SQSQueue(MessageQueue):
         print(f'Message sent to SQS! MessageId: {response["MessageId"]}')
         return response['MessageId']
 
-    def poll_messages(self, max_number_of_messages=1, wait_time_seconds=5, delete_after_polling=True):
+    def receive(self, max_messages=1, wait_time_seconds=5, delete_after_polling=True):
         """Poll messages from SQS queue"""
         response = self.client.receive_message(
-            QueueUrl=self.queue_url, MaxNumberOfMessages=max_number_of_messages, WaitTimeSeconds=wait_time_seconds
+            QueueUrl=self.queue_url, MaxNumberOfMessages=max_messages, WaitTimeSeconds=wait_time_seconds
         )
         messages = response.get('Messages', [])
         if not messages:
             print('No messages received.')
-            return None
+            return []
         message = messages[0]
         body = json.loads(message['Body'])
         print(f'Received message: {body}')
@@ -52,18 +47,18 @@ class SQSQueue(MessageQueue):
         if delete_after_polling:
             self.client.delete_message(QueueUrl=self.queue_url, ReceiptHandle=message['ReceiptHandle'])
             print('Message deleted from SQS queue.')
-        return body
+        return [body]
 
 
 if __name__ == '__main__':
     from src.config.config import settings
 
     S3_KEY = os.getenv('S3_KEY', 'tmpbl_6dq9u.jpg')
-    sqs_queue = SQSQueue(
+    sqs_queue = SQSMessageBus(
         settings.sqs_queue_url,
         settings.aws_access_key_id,
         settings.aws_secret_access_key,
         settings.aws_default_region,
     )
-    sqs_queue.send_message({'s3_key': 'this_is_an_image.jpg', 'bucket_name': 'my-bucket'})
-    sqs_queue.poll_messages()
+    sqs_queue.send({'s3_key': 'this_is_an_image.jpg', 'bucket_name': 'my-bucket'})
+    sqs_queue.receive()
