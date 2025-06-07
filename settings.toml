@@ -1,0 +1,7 @@
+[development]
+AWS_DEFAULT_REGION = "ap-southeast-2"
+SQS_QUEUE_URL = "https://sqs.ap-southeast-2.amazonaws.com/549182891887/AssignmentEsoft"
+SQS_QUEUE_URL_OUT = "https://sqs.ap-southeast-2.amazonaws.com/549182891887/AssignmentEsoftOut"
+BUCKET_NAME = 'assignment-esoft'
+MODEL_NAME = 'akahana/vit-base-cats-vs-dogs'
+BATCH = 1
