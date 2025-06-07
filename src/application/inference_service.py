@@ -1,11 +1,19 @@
 import json
 
-from domain.ports import MessageBus, ModelRunner
+from src.domain.ports import MessageBus, ModelRunner, S3Compatible
 
 
 class InferenceService:
-    def __init__(self, bus_in: MessageBus, bus_out: MessageBus, model: ModelRunner, batch=10):
+    def __init__(
+        self,
+        bus_in: MessageBus,
+        storage: S3Compatible,
+        bus_out: MessageBus,
+        model: ModelRunner,
+        batch=10,
+    ):
         self.bus_in = bus_in
+        self.storage = storage
         self.bus_out = bus_out
         self.model = model
         self.batch = batch
