@@ -40,4 +40,7 @@ class InferenceService:
     def run_forever(self):
         while True:
             msgs = self.bus_in.receive(self.batch)
+            if len(msgs) == 0:
+                print('No messages received, waiting...', flush=True)
+                continue
             self.handle_batch(msgs)
