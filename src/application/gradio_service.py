@@ -4,6 +4,7 @@ import uuid
 from typing import Dict, List
 
 import gradio as gr
+from PIL import Image
 
 from src.domain.entities import OutputModel
 from src.domain.ports import MessageBus, S3Compatible
@@ -17,14 +18,26 @@ class GradioService:
         self.bucket = bucket_name
         self.results: List[Dict] = []  # Store dicts: {key, prediction, image_bytes}
 
-    def upload_image(self, image):
-        buf = io.BytesIO()
-        image.save(buf, format='JPEG')
-        image_bytes = buf.getvalue()
-        key = f'gradio_uploads/{uuid.uuid4().hex}.jpg'
-        self.s3.store(key, image_bytes, self.bucket)
-        self.bus_in.send({'bucket': self.bucket, 'key': key})
-        return f'Image uploaded. Key: {key}'
+    def upload_images(self, files: list[bytes | Image.Image]):
+        if not isinstance(files, list):
+            files = [files]
+        keys = []
+
+        for file in files:
+            if file is None:
+                continue
+            if isinstance(file, Image.Image):
+                image = file
+            else:
+                image = Image.open(file)
+            buf = io.BytesIO()
+            image.save(buf, format='JPEG')
+            image_bytes = buf.getvalue()
+            key = f'gradio_uploads/{uuid.uuid4().hex}.jpg'
+            self.s3.store(key, image_bytes, self.bucket)
+            self.bus_in.send({'bucket': self.bucket, 'key': key})
+            keys.append(key)
+        return f'Uploaded {len(keys)} image(s). Keys: {", ".join(keys)}'
 
     def poll_results(self) -> None:
         raw_messages = self.bus_out.receive(max_messages=10, wait_time_seconds=2, delete_after_polling=False)
@@ -43,13 +56,19 @@ class GradioService:
         with gr.Blocks() as demo:
             with gr.Row():
                 with gr.Column():
-                    image_input = gr.Image(type='pil', label='Upload Image')
-                    upload_btn = gr.Button('Upload')
-                    upload_output = gr.Textbox(label='Upload Status')
+                    # Single image upload
+                    image_input = gr.Image(type='pil', label='Upload Single Image')
+                    upload_btn = gr.Button('Upload Single')
+                    upload_output = gr.Textbox(label='Upload Status (Single)')
+                    # Multiple images upload
+                    file_input = gr.File(file_types=['image'], file_count='multiple', label='Upload Multiple Images')
+                    upload_multi_btn = gr.Button('Upload Multiple')
+                    upload_multi_output = gr.Textbox(label='Upload Status (Multiple)')
                 with gr.Column():
                     refresh_btn = gr.Button('Refresh')
                     table_html = gr.HTML(label='Results Table')
-            upload_btn.click(self.upload_image, inputs=image_input, outputs=upload_output)
+            upload_btn.click(self.upload_images, inputs=[image_input], outputs=upload_output)
+            upload_multi_btn.click(self.upload_images, inputs=file_input, outputs=upload_multi_output)
 
             def update_table():
                 self.poll_results()
