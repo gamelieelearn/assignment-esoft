@@ -25,10 +25,18 @@ def main_gradio_app():
     gradio_app.gradio_app()
 
 
+def main_clean_sqs_out():
+    """Delete all messages in the sqs_out queue and display the number of messages deleted."""
+    from src.cli import sqs_out_cleaner
+
+    sqs_out_cleaner.clean_sqs_out()
+
+
 if __name__ == '__main__':
     fire.Fire(
         {
             'inference': main_inference_app,
             'gradio': main_gradio_app,
+            'clean_sqs_out': main_clean_sqs_out,
         }
     )
