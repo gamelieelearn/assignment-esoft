@@ -75,6 +75,6 @@ class GradioService:
 
     def run_forever(self, user: str | None = None, password: str | None = None):
         if user and password:
-            self.get_gradio_interface().launch(auth=(user, password))
+            self.get_gradio_interface().launch(server_name='0.0.0.0', auth=(user, password))
         else:
-            self.get_gradio_interface().launch()
+            self.get_gradio_interface().launch(server_name='0.0.0.0')
