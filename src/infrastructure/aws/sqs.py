@@ -49,6 +49,10 @@ class SQSMessageBus:
             print('Message deleted from SQS queue.', flush=True)
         return [body]
 
+    def purge(self):
+        self.client.purge_queue(QueueUrl=self.queue_url)
+        print(f'Queue {self.queue_url} purged.', flush=True)
+
 
 if __name__ == '__main__':
     from src.config.config import settings

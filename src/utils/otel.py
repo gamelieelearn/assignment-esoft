@@ -24,6 +24,8 @@ if ENABLE_OTEL:
 else:
     meter = None
 
+print(f'OpenTelemetry enabled: {ENABLE_OTEL}')
+
 
 # No-op metric classes
 class NoOpCounter:

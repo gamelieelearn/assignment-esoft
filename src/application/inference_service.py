@@ -18,6 +18,23 @@ throughput_counter = meter.create_counter(
     unit='1',
 )
 
+image_download_latency_hist = meter.create_histogram(
+    name='inference_image_download_latency_seconds',
+    description='Time taken to download all images in a batch from S3 (seconds)',
+    unit='s',
+)
+inference_latency_hist = meter.create_histogram(
+    name='inference_model_latency_seconds',
+    description='Time taken for model inference on a batch (seconds)',
+    unit='s',
+)
+
+batch_size_hist = meter.create_histogram(  # should use a gauge
+    name='inference_batch_size',
+    description='Number of images in each batch',
+    unit='1',
+)
+
 
 class InferenceService:
     def __init__(
@@ -40,15 +57,22 @@ class InferenceService:
         messages: list[InputModel] = []
         for m in raw_messages:
             messages.append(InputModel.model_validate(m))
+        batch_size_hist.record(len(messages))
 
         # download images from s3, can improve latency
+        download_start = time.perf_counter()
         batch = []
         for m in messages:
             image_bytes: bytes = self.s3.retrieve(key=m.key, bucket=m.bucket)
             batch.append(image_bytes)
+        download_elapsed = time.perf_counter() - download_start
+        image_download_latency_hist.record(download_elapsed)
 
-        # model predition
+        # model prediction
+        inference_start = time.perf_counter()
         predictions = self.model.predict(batch)
+        inference_elapsed = time.perf_counter() - inference_start
+        inference_latency_hist.record(inference_elapsed)
 
         # form the output and send
         for m, p in zip(messages, predictions):
