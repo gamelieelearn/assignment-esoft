@@ -32,11 +32,19 @@ def main_clean_sqs_out():
     sqs_out_cleaner.clean_sqs_out()
 
 
+def main_benchmark_app(num_images: int = 10):
+    """Benchmark app: send images from HuggingFace dataset to SQS input queue."""
+    from src.cli import benchmark_app
+
+    benchmark_app.benchmark_app(num_images)
+
+
 if __name__ == '__main__':
     fire.Fire(
         {
             'inference': main_inference_app,
             'gradio': main_gradio_app,
             'clean_sqs_out': main_clean_sqs_out,
+            'benchmark': main_benchmark_app,
         }
     )
