@@ -5,3 +5,6 @@ moto[s3,sqs]
 pytest
 pytest-cov
 
+pillow
+torch
+transformers
