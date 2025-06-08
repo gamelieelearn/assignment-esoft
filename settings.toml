@@ -5,3 +5,5 @@ SQS_QUEUE_URL_OUT = "https://sqs.ap-southeast-2.amazonaws.com/549182891887/Assig
 BUCKET_NAME = 'assignment-esoft'
 MODEL_NAME = 'akahana/vit-base-cats-vs-dogs'
 BATCH = 1
+SENTRY_DSN = "https://76516bf94effd299819fbe1468101f6e@o4509461839282176.ingest.de.sentry.io/4509461842624592"
+GRADIO_USER = "demouser"

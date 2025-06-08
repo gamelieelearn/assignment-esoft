@@ -19,6 +19,8 @@ class SimpleTransformerRunner:
         input_data: list of image bytes
         Returns: list of predicted labels
         """
+        if len(batch) == 0:
+            return []
         images = [Image.open(io.BytesIO(img_bytes)).convert('RGB') for img_bytes in batch]
         inputs = self.processor(images=images, return_tensors='pt')
         with torch.no_grad():

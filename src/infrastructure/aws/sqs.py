@@ -28,7 +28,7 @@ class SQSMessageBus:
         except Exception as e:
             print(f'{self.queue_url=}')
             raise e
-        print(f'Message sent to SQS! MessageId: {response["MessageId"]}')
+        print(f'Message sent to SQS! MessageId: {response["MessageId"]}', flush=True)
         return response['MessageId']
 
     def receive(self, max_messages=1, wait_time_seconds=5, delete_after_polling=True):
@@ -42,11 +42,11 @@ class SQSMessageBus:
             return []
         message = messages[0]
         body = json.loads(message['Body'])
-        print(f'Received message: {body}')
+        print(f'Received message: {body}', flush=True)
         # Optionally delete the message from the queue
         if delete_after_polling:
             self.client.delete_message(QueueUrl=self.queue_url, ReceiptHandle=message['ReceiptHandle'])
-            print('Message deleted from SQS queue.')
+            print('Message deleted from SQS queue.', flush=True)
         return [body]
 
 

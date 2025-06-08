@@ -21,7 +21,7 @@ class StorageS3:
     def store(self, key: str, data: Any, bucket: str) -> None:
         try:
             self.client.put_object(Bucket=bucket, Key=key, Body=data)
-            print(f'Upload successful! Bucket: {bucket}, Key: {key}')
+            print(f'Upload successful! Bucket: {bucket}, Key: {key}', flush=True)
         except NoCredentialsError:
             print('Credentials not available.')
         except Exception as e:
@@ -31,7 +31,7 @@ class StorageS3:
         try:
             response = self.client.get_object(Bucket=bucket, Key=key)
             data = response['Body'].read()
-            print(f'Download successful! Bucket: {bucket}, Key: {key}')
+            print(f'Download successful! Bucket: {bucket}, Key: {key}', flush=True)
             return data
         except NoCredentialsError:
             print('Credentials not available.')

@@ -8,3 +8,7 @@ pytest-cov
 pillow
 torch
 transformers
+
+gradio
+# monitor
+sentry-sdk
