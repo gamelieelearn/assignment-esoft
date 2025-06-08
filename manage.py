@@ -5,7 +5,7 @@ import sentry_sdk
 from src.cli import gradio_app, inference_app
 from src.config.config import settings
 
-if settings.sentry_dsn is not None:
+if settings.sentry_dsn:
     sentry_sdk.init(
         dsn=settings.sentry_dsn,
         # Add data like request headers and IP for users,

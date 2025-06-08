@@ -20,5 +20,3 @@ settings = MySettings(
     environments=True,
     load_dotenv=True,
 )
-
-assert settings.sentry_dsn is not None
