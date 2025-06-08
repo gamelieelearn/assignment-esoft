@@ -24,4 +24,4 @@ def gradio_app():
     )
 
     service = GradioService(bus_in, s3, bus_out, bucket_name=settings.bucket_name)
-    service.run_forever()
+    service.run_forever(user=settings.gradio_user, password=settings.gradio_password)

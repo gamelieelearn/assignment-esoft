@@ -73,5 +73,8 @@ class GradioService:
             demo.load(update_table, outputs=table_html)
         return demo
 
-    def run_forever(self):
-        self.get_gradio_interface().launch()
+    def run_forever(self, user: str | None = None, password: str | None = None):
+        if user and password:
+            self.get_gradio_interface().launch(auth=(user, password))
+        else:
+            self.get_gradio_interface().launch()

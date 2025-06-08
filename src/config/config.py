@@ -11,6 +11,8 @@ class MySettings(Dynaconf):
     model_name: str
     batch: int
     sentry_dsn: str | None
+    gradio_user: str | None
+    gradio_password: str | None
 
 
 settings = MySettings(
