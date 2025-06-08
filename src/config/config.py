@@ -10,6 +10,7 @@ class MySettings(Dynaconf):
     bucket_name: str
     model_name: str
     batch: int
+    sentry_dsn: str | None
 
 
 settings = MySettings(
@@ -17,3 +18,5 @@ settings = MySettings(
     environments=True,
     load_dotenv=True,
 )
+
+assert settings.sentry_dsn is not None
