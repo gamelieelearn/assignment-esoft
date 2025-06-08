@@ -1,5 +1,22 @@
+import time
+
 from src.domain.entities import InferOut, InputModel, OutputModel
 from src.domain.ports import MessageBus, ModelRunner, S3Compatible
+from src.utils.otel import get_meter
+
+meter = get_meter()
+
+# Define metrics
+batch_latency_hist = meter.create_histogram(
+    name='inference_batch_latency_seconds',
+    description='Time taken to process a batch of images (seconds)',
+    unit='s',
+)
+throughput_counter = meter.create_counter(
+    name='inference_images_processed_total',
+    description='Total number of images processed',
+    unit='1',
+)
 
 
 class InferenceService:
@@ -18,6 +35,7 @@ class InferenceService:
         self.batch = batch
 
     def handle_batch(self, raw_messages):
+        start = time.perf_counter()
         # input validatation
         messages: list[InputModel] = []
         for m in raw_messages:
@@ -36,6 +54,11 @@ class InferenceService:
         for m, p in zip(messages, predictions):
             out = OutputModel(input=m, result=InferOut(class_name=p))
             self.bus_out.send(out.model_dump_json())
+
+        # Record metrics
+        elapsed = time.perf_counter() - start
+        batch_latency_hist.record(elapsed)
+        throughput_counter.add(len(messages))
 
     def run_forever(self):
         while True:

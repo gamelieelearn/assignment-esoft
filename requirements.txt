@@ -12,3 +12,7 @@ transformers
 gradio
 # monitor
 sentry-sdk
+
+opentelemetry-api
+opentelemetry-sdk
+opentelemetry-exporter-otlp
