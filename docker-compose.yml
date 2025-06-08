@@ -1,0 +1,15 @@
+services:
+  gradio:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile
+    image: assignment-esoft:latest
+    command: python manage.py gradio
+    ports:
+      - "7860:7860"
+    restart: unless-stopped
+
+  inference:
+    image: assignment-esoft:latest
+    command: python manage.py inference
+    restart: unless-stopped
