@@ -1,5 +1,7 @@
 import time
 
+from pydantic import BaseModel, Field
+
 from src.domain.entities import InferOut, InputModel, OutputModel
 from src.domain.ports import MessageBus, ModelRunner, S3Compatible
 from src.utils.otel import get_meter
@@ -36,6 +38,11 @@ batch_size_hist = meter.create_histogram(  # should use a gauge
 )
 
 
+class SQSMessage(BaseModel):
+    body: InputModel = Field(..., alias='Body')
+    receipt_handle: str = Field(..., alias='ReceiptHandle')
+
+
 class InferenceService:
     def __init__(
         self,
@@ -54,16 +61,16 @@ class InferenceService:
     def handle_batch(self, raw_messages):
         start = time.perf_counter()
         # input validatation
-        messages: list[InputModel] = []
+        messages: list[SQSMessage] = []
         for m in raw_messages:
-            messages.append(InputModel.model_validate(m))
+            messages.append(SQSMessage.model_validate(m))
         batch_size_hist.record(len(messages))
 
         # download images from s3, can improve latency
         download_start = time.perf_counter()
         batch = []
         for m in messages:
-            image_bytes: bytes = self.s3.retrieve(key=m.key, bucket=m.bucket)
+            image_bytes: bytes = self.s3.retrieve(key=m.body.key, bucket=m.body.bucket)
             batch.append(image_bytes)
         download_elapsed = time.perf_counter() - download_start
         image_download_latency_hist.record(download_elapsed)
@@ -76,11 +83,15 @@ class InferenceService:
 
         # form the output and send
         for m, p in zip(messages, predictions):
-            out = OutputModel(input=m, result=InferOut(class_name=p))
+            out = OutputModel(input=m.body, result=InferOut(class_name=p))
             self.bus_out.send(out.model_dump_json())
 
-        # Record metrics
         elapsed = time.perf_counter() - start
+        # Delete messages
+        for m in messages:
+            self.bus_in.delete(m.model_dump(by_alias=False))
+
+        # Record metrics
         batch_latency_hist.record(elapsed)
         throughput_counter.add(len(messages))
 
