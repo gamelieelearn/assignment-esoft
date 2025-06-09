@@ -11,7 +11,7 @@ from src.application.inference_service import InferenceService
 class TestInferenceService:
     def test_handle_batch(self):
         # Arrange
-        fake_input = {'bucket': 'test-bucket', 'key': 'test-key'}
+        fake_input = {'Body': {'bucket': 'test-bucket', 'key': 'test-key'}, 'ReceiptHandle': 'none'}
         s3 = boto3.client('s3', region_name='us-east-1')
         s3.create_bucket(Bucket='test-bucket')
         s3.put_object(Bucket='test-bucket', Key='test-key', Body=b'imgbytes')
@@ -19,6 +19,7 @@ class TestInferenceService:
         # Mock S3Compatible to use moto
         class S3CompatibleMoto:
             def store(self, key: str, data: Any, bucket: str) -> None: ...
+
             def retrieve(self, key, bucket):
                 obj = s3.get_object(Bucket=bucket, Key=key)
                 return obj['Body'].read()
