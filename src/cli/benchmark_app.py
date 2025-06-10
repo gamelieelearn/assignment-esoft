@@ -1,9 +1,11 @@
 import io
+import uuid
 
 from datasets import load_dataset
 from PIL import Image
 
 from src.config.config import settings
+from src.domain.entities import InputModel
 from src.infrastructure.aws.s3 import StorageS3
 from src.infrastructure.aws.sqs import SQSMessageBus
 
@@ -35,9 +37,10 @@ def benchmark_app(num_images: int = 10):
         buf = io.BytesIO()
         image.save(buf, format='JPEG')
         img_bytes = buf.getvalue()
-        key = f'benchmark/{count}.jpg'
+        key = f'benchmark/{count}_{uuid.uuid4().hex}.jpg'
         s3.store(key, img_bytes, bucket)
-        bus_in.send({'bucket': bucket, 'key': key})
+        input = InputModel(bucket=bucket, key=key)
+        bus_in.send(input.model_dump_json())
         print(f'Sent image {count + 1}/{num_images} to SQS and S3: {key}')
         count += 1
     print(f'Benchmarking complete. {count} images sent.')
