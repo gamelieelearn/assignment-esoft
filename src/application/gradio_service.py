@@ -4,9 +4,22 @@ import uuid
 from typing import Dict, List
 
 import gradio as gr
+from pydantic import BaseModel, Field, field_validator
 
-from src.domain.entities import OutputModel
+from src.domain.entities import InputModel, OutputModel
 from src.domain.ports import MessageBus, S3Compatible
+
+
+class SQSOutMessage(BaseModel):
+    body: OutputModel = Field(..., alias='Body')
+    receipt_handle: str = Field(..., alias='ReceiptHandle')
+
+    @field_validator('body', mode='before')
+    @classmethod
+    def validate_body_json(cls, v):
+        if isinstance(v, str):
+            return OutputModel.model_validate_json(v)
+        return v
 
 
 class GradioService:
@@ -23,20 +36,23 @@ class GradioService:
         image_bytes = buf.getvalue()
         key = f'gradio_uploads/{uuid.uuid4().hex}.jpg'
         self.s3.store(key, image_bytes, self.bucket)
-        self.bus_in.send({'bucket': self.bucket, 'key': key})
+        input = InputModel(bucket=self.bucket, key=key)
+        self.bus_in.send(input.model_dump_json())
         return f'Image uploaded. Key: {key}'
 
     def poll_results(self) -> None:
-        raw_messages = self.bus_out.receive(max_messages=10, wait_time_seconds=2, delete_after_polling=False)
-        messages = [OutputModel.model_validate_json(msg) for msg in raw_messages]
-        for msg in messages:
+        raw_messages = self.bus_out.receive(max_messages=10, wait_time_seconds=2)
+        for raw_msg in raw_messages:
+            print(raw_msg['Body'])
+            msg = SQSOutMessage.model_validate(raw_msg)
             try:
-                image_bytes = self.s3.retrieve(key=msg.input.key, bucket=msg.input.bucket)
+                image_bytes = self.s3.retrieve(key=msg.body.input.key, bucket=msg.body.input.bucket)
             except Exception:
                 image_bytes = None
-            pred = msg.result.class_name
-            row = {'image': image_bytes, 'key': msg.input.key, 'prediction': pred}
+            pred = msg.body.result.class_name
+            row = {'image': image_bytes, 'key': msg.body.input.key, 'prediction': pred}
             self.results.append(row)
+            self.bus_out.delete(raw_msg)
         self.results = self.results[-10:]
 
     def get_gradio_interface(self):

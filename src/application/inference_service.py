@@ -1,6 +1,6 @@
 import time
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from src.domain.entities import InferOut, InputModel, OutputModel
 from src.domain.ports import MessageBus, ModelRunner, S3Compatible
@@ -41,6 +41,13 @@ batch_size_hist = meter.create_histogram(  # should use a gauge
 class SQSMessage(BaseModel):
     body: InputModel = Field(..., alias='Body')
     receipt_handle: str = Field(..., alias='ReceiptHandle')
+
+    @field_validator('body', mode='before')
+    @classmethod
+    def validate_body_json(cls, v):
+        if isinstance(v, str):
+            return InputModel.model_validate_json(v)
+        return v
 
 
 class InferenceService:
