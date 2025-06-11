@@ -72,7 +72,7 @@ class GradioService:
                 # Build HTML table
                 html = '<table border="1" style="width:100%; text-align:center;">'
                 html += '<tr><th>Image</th><th>Prediction</th></tr>'
-                for row in self.results:
+                for row in self.results[::-1]:
                     if (img := row['image']) is not None:
                         img_b64 = base64.b64encode(img).decode('utf-8')
                         img_tag = (
